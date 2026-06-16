@@ -80,7 +80,7 @@
 
                 <div class="w-full box-border">
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Фактическое время (часы)</label>
-                    <input type="number" id="raw_hours" step="5" min="0.5" max="24" required placeholder="Кратное 0,5" class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none box-border block">
+                    <input type="number" id="raw_hours" step="0.5" min="0.5" max="24" required placeholder="Кратное 0,5" class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none box-border block">
                 </div>
 
                 <button type="submit" class="w-full bg-blue-600 text-white text-base font-bold py-3.5 rounded-lg shadow-md hover:bg-blue-700 active:transform active:scale-[0.98] transition-all focus:outline-none mt-4 block">
@@ -97,8 +97,7 @@
                     <span id="current-year-display" class="font-bold text-base text-gray-700">2026 год</span>
                     <button onclick="changeYear(1)" class="px-4 py-2 text-blue-600 font-bold text-lg focus:outline-none active:bg-gray-100 rounded">▶️</button>
                 </div>
-                <div class="grid grid-cols-2 gap-2 w-full box-border" id="months-grid">
-                    </div>
+                <div class="grid grid-cols-2 gap-2 w-full box-border" id="months-grid"></div>
             </div>
 
             <div id="month-summary" class="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-4 rounded-xl shadow-sm grid grid-cols-2 gap-3 hidden w-full box-border">
@@ -137,10 +136,7 @@
         tg.ready();
         tg.expand();
         
-        // ВНИМАНИЕ: Сюда впишите ссылку на ваш бэкенд на Render!
         const API_BASE_URL = 'https://testbot-b4gh.onrender.com'; 
-        
-        // ВНИМАНИЕ: Впишите сюда ваш реальный Telegram ID числом
         const MY_TELEGRAM_ID = 1787828264; 
 
         const user = tg.initDataUnsafe?.user;
@@ -156,7 +152,6 @@
         const userId = user?.id || 123456789;
         document.getElementById('user-display').innerText = userName;
 
-        // ПРОВЕРКА: Если зашел чужой пользователь — скрываем поле ввода топлива
         if (userId !== MY_TELEGRAM_ID) {
             const fuelBlock = document.getElementById('fuel-block');
             if (fuelBlock) {
@@ -245,8 +240,6 @@
             const formattedDate = `${d}.${m}.${y}`;
 
             let rawHours = parseFloat(document.getElementById('raw_hours').value);
-            
-            // Округление строго в меньшую сторону до кратного 0.5
             rawHours = Math.floor(rawHours * 2) / 2;
 
             const payload = {
@@ -319,14 +312,12 @@
                 document.getElementById('sum-hours').innerText = `${s.total_hours} ч.`;
                 document.getElementById('sum-avg').innerText = `${s.avg_salary} руб`;
                 
-                // Настройка отображения сквозного топливного баланса ТОЛЬКО для вас
                 const fuelSummaryCard = document.getElementById('fuel-summary-card');
                 if (userId === MY_TELEGRAM_ID) {
                     fuelSummaryCard.classList.remove('hidden');
-                    {
-                        document.getElementById('sum-fuel-lifetime').innerText = `Остаток: ${Math.abs(s.lifetime_fuel_debt)} л`;
-                        document.getElementById('sum-fuel-lifetime').className = "text-base font-black mt-0.5";
-                    }
+                    // Выводим исходное число напрямую (без Math.abs), сохраняя минус
+                    document.getElementById('sum-fuel-lifetime').innerText = `Остаток: ${s.lifetime_fuel_debt} л`;
+                    document.getElementById('sum-fuel-lifetime').className = "text-base font-black mt-0.5";
                 } else {
                     fuelSummaryCard.classList.add('hidden');
                 }
@@ -338,33 +329,26 @@
                     const card = document.createElement('div');
                     card.className = "bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center w-full box-border";
                     
-                    // Посуточный расчет топлива выводится только вам
-                   // Замените этот кусок внутри resData.shifts.forEach в index.html:
-        
-        // Посуточный детальный расчет топлива (только для вас)
                     let fuelDayRow = '';
                     if (userId === MY_TELEGRAM_ID) {
-                        const fAdded = shift.fuel_add;       // Заправлено
-                        const fCons = shift.consumption;     // Расход по пробегу
-                        const fDebt = shift.shift_debt;      // Итог (баланс смены)
+                        const fAdded = shift.fuel_add;       
+                        const fCons = shift.consumption;     
+                        const fDebt = shift.shift_debt;      
                         
-                        // Определяем статус: сэкономили (остаток) или перерасходовали (долг)
-                        let totalDayResult = '';
-                        {
-                            totalDayResult = `<span class="font-bold">Остаток за день: ${Math.abs(fDebt)} л</span>`;
-                        }
-            
+                        // Выводим исходный знак напрямую
+                        let totalDayResult = `<span class="font-bold">Остаток за день: ${fDebt} л</span>`;
+        
                         fuelDayRow = `
                             <div class="bg-gray-50 p-2 rounded-lg border border-gray-100 mt-1.5 space-y-0.5 text-[11px]">
                                 <p class="text-gray-600">⛽ Заправлено: <span class="font-semibold text-gray-800">${fAdded} л</span></p>
                                 <p class="text-gray-600">📉 Расход (пробег): <span class="font-semibold text-gray-800">${fCons} л</span></p>
-                                <p class="pt-0.5 border-t border-gray-200 mt-0.5">${totalDayResult}</p>
+                                <p class="pt-0.5 border-t border-gray-200 mt-0.5 text-gray-800">${totalDayResult}</p>
                             </div>
                         `;
                     }
 
                     card.innerHTML = `
-                        <div class="text-xs space-y-1">
+                        <div class="text-xs space-y-1 flex-1">
                             <p class="font-bold text-sm text-gray-900">${shift.date}</p>
                             <p class="text-gray-500">🏎️ Пробег: <span class="font-semibold text-gray-700">${shift.distance} км</span></p>
                             <p class="text-gray-500">⏱️ Время: <span class="font-semibold text-gray-700">${shift.hours_calculated} ч</span></p>
@@ -372,7 +356,7 @@
                             ${fuelDayRow}
                             <p class="text-sm text-green-600 font-bold mt-1">💰 ${shift.salary} руб.</p>
                         </div>
-                        <button onclick="deleteShift(${shift.id}, '${shift.date}')" class="text-red-500 hover:text-red-700 p-2 focus:outline-none">
+                        <button onclick="deleteShift(${shift.id}, '${shift.date}')" class="text-red-500 hover:text-red-700 p-2 focus:outline-none self-start">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
                     `;
