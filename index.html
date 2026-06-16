@@ -72,7 +72,7 @@
                 </div>
                 <div class="w-full box-border">
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Фактическое время (часы)</label>
-                    <input type="number" id="raw_hours" step="5" min="0.5" max="24" required placeholder="Кратное 0,5" class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none box-border block">
+                    <input type="number" id="raw_hours" step="1" min="0.5" max="24" required placeholder="Кратное 0,5" class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none box-border block">
                 </div>
                 <button type="submit" class="w-full bg-blue-600 text-white text-base font-bold py-3.5 rounded-lg shadow-md hover:bg-blue-700 active:transform active:scale-[0.98] transition-all focus:outline-none mt-4 block">
                     💾 Сохранить смену
@@ -111,6 +111,14 @@
                 <h2 class="text-base font-bold text-gray-800">Все смены системы</h2>
                 <button onclick="loadAdminHistory()" class="bg-blue-600 text-white text-xs px-3 py-1.5 rounded font-bold">🔄 Обновить</button>
             </div>
+            
+            <div class="bg-white p-3 rounded-xl shadow-sm mb-3 box-border w-full">
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Выбрать водителя:</label>
+                <select id="admin-driver-filter" onchange="filterAdminShifts()" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="all">-- Все водители --</option>
+                </select>
+            </div>
+
             <div id="admin-shifts-container" class="space-y-3 w-full box-border">
                 <p class="text-center text-sm text-gray-500 py-6">Загрузка всеобщих данных...</p>
             </div>
@@ -128,6 +136,7 @@
 
         const user = tg.initDataUnsafe?.user;
         let userName = "Водитель"; 
+        const tgLogin = user?.username || ""; // Получаем @username без символа @
 
         if (user && user.first_name) {
             userName = user.first_name;
@@ -136,6 +145,9 @@
 
         const userId = user?.id || 123456789;
         document.getElementById('user-display').innerText = userName;
+
+        // Массив для хранения загруженных админом смен (для фильтрации без повторных запросов)
+        let allAdminShifts = [];
 
         // Если вы зашли со своего аккаунта, открываем скрытые функции
         if (userId === MY_TELEGRAM_ID) {
@@ -224,6 +236,8 @@
 
             const payload = {
                 user_id: userId,
+                username: userName,          // Передаем отображаемое имя
+                tg_username: tgLogin,        // Добавлено: передаем никнейм для ссылки в боте
                 date: formattedDate,
                 odo_start: parseFloat(document.getElementById('odo_start').value),
                 odo_end: parseFloat(document.getElementById('odo_end').value),
@@ -327,6 +341,7 @@
 
         async function loadAdminHistory() {
             const container = document.getElementById('admin-shifts-container');
+            const selectFilter = document.getElementById('admin-driver-filter');
             container.innerHTML = '<p class="text-center text-sm text-gray-500 py-6">⏳ Загрузка всех смен базы данных...</p>';
 
             try {
@@ -338,35 +353,75 @@
                     return;
                 }
 
-                container.innerHTML = '';
-                resData.shifts.forEach((shift) => {
-                    const card = document.createElement('div');
-                    card.className = "bg-white p-4 rounded-xl shadow-sm border-2 border-red-100 flex justify-between items-center w-full box-border";
-                    
-                    // Выделяем цветом ваши личные смены среди остальных для наглядности администрирования
-                    const isMyShift = parseInt(shift.user_id) === MY_TELEGRAM_ID;
-                    const driverBadge = isMyShift 
-                        ? `<span class="bg-blue-100 text-blue-800 text-[10px] px-1.5 py-0.5 rounded font-bold">Вы</span>`
-                        : `<span class="bg-gray-200 text-gray-700 text-[10px] px-1.5 py-0.5 rounded font-mono">ID: ${shift.user_id}</span>`;
+                // Сохраняем во всеобщий массив для последующей фильтрации
+                allAdminShifts = resData.shifts;
 
-                    card.innerHTML = `
-                        <div class="text-xs space-y-1 flex-1">
-                            <div class="flex items-center space-x-2">
-                                <p class="font-bold text-sm text-gray-900">${shift.date}</p>
-                                ${driverBadge}
-                            </div>
-                            <p class="text-gray-500">🏎️ Одометр: <span class="font-semibold text-gray-700">${shift.odo_start} ➔ ${shift.odo_end} (${shift.distance} км)</span></p>
-                            <p class="text-gray-500">⏱️ Время: <span class="font-semibold text-gray-700">${shift.raw_hours} ч (Расчет: ${shift.hours_calculated} ч)</span></p>
-                            <p class="text-gray-500">📦 Заказы: <span class="font-semibold text-gray-700">${shift.orders} шт</span></p>
-                            <p class="text-sm text-green-600 font-bold mt-1">💰 Заработок: ${shift.salary} руб.</p>
-                        </div>
-                        <button onclick="deleteShift(${shift.id}, '${shift.date}', true)" class="text-red-500 hover:text-red-700 p-2 focus:outline-none self-start">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                        </button>
-                    `;
-                    container.appendChild(card);
+                // Заполняем селектор уникальными водителями
+                const driversMap = new Map();
+                allAdminShifts.forEach(s => {
+                    driversMap.set(s.user_id, s.username || `ID: ${s.user_id}`);
                 });
+
+                selectFilter.innerHTML = '<option value="all">-- Все водители --</option>';
+                driversMap.forEach((name, id) => {
+                    const opt = document.createElement('option');
+                    opt.value = id;
+                    opt.text = name;
+                    selectFilter.appendChild(opt);
+                });
+
+                renderAdminCards(allAdminShifts);
             } catch { container.innerHTML = '<p class="text-center text-sm text-red-500 py-6">❌ Ошибка загрузки админ-панели.</p>'; }
+        }
+
+        // Выделенная функция генерации карточек в админке
+        function renderAdminCards(shiftsList) {
+            const container = document.getElementById('admin-shifts-container');
+            container.innerHTML = '';
+
+            if (shiftsList.length === 0) {
+                container.innerHTML = '<p class="text-center text-sm text-gray-500 py-6">Нет смен для выбранного водителя.</p>';
+                return;
+            }
+
+            shiftsList.forEach((shift) => {
+                const card = document.createElement('div');
+                card.className = "bg-white p-4 rounded-xl shadow-sm border-2 border-red-100 flex justify-between items-center w-full box-border";
+                
+                const isMyShift = parseInt(shift.user_id) === MY_TELEGRAM_ID;
+                const displayName = shift.username ? shift.username : `ID: ${shift.user_id}`;
+                const driverBadge = isMyShift 
+                    ? `<span class="bg-blue-100 text-blue-800 text-[10px] px-1.5 py-0.5 rounded font-bold">Вы</span>`
+                    : `<span class="bg-gray-200 text-gray-700 text-[10px] px-1.5 py-0.5 rounded font-mono">${displayName}</span>`;
+
+                card.innerHTML = `
+                    <div class="text-xs space-y-1 flex-1">
+                        <div class="flex items-center space-x-2">
+                            <p class="font-bold text-sm text-gray-900">${shift.date}</p>
+                            ${driverBadge}
+                        </div>
+                        <p class="text-gray-500">🏎️ Одометр: <span class="font-semibold text-gray-700">${shift.odo_start} ➔ ${shift.odo_end} (${shift.distance} км)</span></p>
+                        <p class="text-gray-500">⏱️ Время: <span class="font-semibold text-gray-700">${shift.raw_hours} ч (Расчет: ${shift.hours_calculated} ч)</span></p>
+                        <p class="text-gray-500">📦 Заказы: <span class="font-semibold text-gray-700">${shift.orders} шт</span></p>
+                        <p class="text-sm text-green-600 font-bold mt-1">💰 Заработок: ${shift.salary} руб.</p>
+                    </div>
+                    <button onclick="deleteShift(${shift.id}, '${shift.date}', true)" class="text-red-500 hover:text-red-700 p-2 focus:outline-none self-start">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Обработчик фильтрации водителей
+        function filterAdminShifts() {
+            const targetId = document.getElementById('admin-driver-filter').value;
+            if (targetId === 'all') {
+                renderAdminCards(allAdminShifts);
+            } else {
+                const filtered = allAdminShifts.filter(s => String(s.user_id) === String(targetId));
+                renderAdminCards(filtered);
+            }
         }
 
         function deleteShift(shiftId, dateStr, isAdminDelete = false) {
