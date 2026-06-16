@@ -44,7 +44,7 @@
             📝 Новая смена
         </button>
         <button onclick="switchTab('history-tab')" id="btn-history-tab" class="w-1/2 py-3 text-center text-sm font-medium border-b-2 border-transparent text-gray-500 focus:outline-none transition-all duration-150">
-            📊 История и статистика
+            📊 История и Статистика
         </button>
     </div>
 
@@ -59,16 +59,16 @@
                 </div>
                 
                 <div class="w-full box-border">
-                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Одометр начало</label>
-                    <input type="number" id="odo_start" step="1" min="0" required placeholder="0" class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none box-border block">
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Одометр старт</label>
+                    <input type="number" id="odo_start" step="1" min="0" required placeholder="0.0" class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none box-border block">
                 </div>
 
                 <div class="w-full box-border">
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Одометр конец</label>
-                    <input type="number" id="odo_end" step="1" min="0" required placeholder="0" class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none box-border block">
+                    <input type="number" id="odo_end" step="1" min="0" required placeholder="0.0" class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none box-border block">
                 </div>
 
-                <div class="w-full box-border">
+                <div class="w-full box-border" id="fuel-block">
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Заправлено топлива (литры)</label>
                     <input type="number" id="fuel_add" step="1" min="0" required value="0" class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none box-border block">
                 </div>
@@ -80,7 +80,7 @@
 
                 <div class="w-full box-border">
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Фактическое время (часы)</label>
-                    <input type="number" id="raw_hours" step="0.5" min="0.5" max="24" required placeholder="Кратное 0.5" class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none box-border block">
+                    <input type="number" id="raw_hours" step="5" min="0.5" max="24" required placeholder="Кратное 0,5" class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none box-border block">
                 </div>
 
                 <button type="submit" class="w-full bg-blue-600 text-white text-base font-bold py-3.5 rounded-lg shadow-md hover:bg-blue-700 active:transform active:scale-[0.98] transition-all focus:outline-none mt-4 block">
@@ -118,6 +118,10 @@
                     <p class="text-[10px] opacity-75 uppercase font-bold tracking-wider">Ср. ЗП за смену</p>
                     <p id="sum-avg" class="text-base font-black mt-0.5">0.00 руб</p>
                 </div>
+                <div id="fuel-summary-card" class="col-span-2 border-t border-blue-500 pt-2 mt-1 hidden">
+                    <p class="text-[10px] opacity-75 uppercase font-bold tracking-wider">Общий баланс топлива (Все время)</p>
+                    <p id="sum-fuel-lifetime" class="text-base font-black mt-0.5">0.00 л</p>
+                </div>
             </div>
 
             <div id="shifts-container" class="space-y-3 w-full box-border">
@@ -134,7 +138,10 @@
         tg.expand();
         
         // ВНИМАНИЕ: Сюда впишите ссылку на ваш бэкенд на Render!
-        const API_BASE_URL = 'https://testbot-b4gh.onrender.com'; 
+        const API_BASE_URL = 'https://ваш-бэкенд.onrender.com'; 
+        
+        // ВНИМАНИЕ: Впишите сюда ваш реальный Telegram ID числом
+        const MY_TELEGRAM_ID = 999999999; 
 
         const user = tg.initDataUnsafe?.user;
         let userName = "Водитель"; 
@@ -148,6 +155,14 @@
 
         const userId = user?.id || 123456789;
         document.getElementById('user-display').innerText = userName;
+
+        // ПРОВЕРКА: Если зашел чужой пользователь — скрываем поле ввода топлива
+        if (userId !== MY_TELEGRAM_ID) {
+            const fuelBlock = document.getElementById('fuel-block');
+            if (fuelBlock) {
+                fuelBlock.style.display = 'none';
+            }
+        }
 
         const now = new Date();
         let selectedYear = now.getFullYear();
@@ -249,7 +264,7 @@
                 return;
             }
             if (payload.odo_end < payload.odo_start) {
-                tg.showAlert(`❌ Нелогично: Конечный одометр меньше начального (${payload.odo_start})!`);
+                tg.showAlert(`❌ Конечный одометр меньше начального (${payload.odo_start})!`);
                 return;
             }
             if (payload.raw_hours <= 0 || payload.raw_hours > 24) {
@@ -303,18 +318,47 @@
                 document.getElementById('sum-days').innerText = `${s.days_count} дн.`;
                 document.getElementById('sum-hours').innerText = `${s.total_hours} ч.`;
                 document.getElementById('sum-avg').innerText = `${s.avg_salary} руб`;
+                
+                // Настройка отображения сквозного топливного баланса ТОЛЬКО для вас
+                const fuelSummaryCard = document.getElementById('fuel-summary-card');
+                if (userId === MY_TELEGRAM_ID) {
+                    fuelSummaryCard.classList.remove('hidden');
+                    if (s.lifetime_fuel_debt >= 0) {
+                        document.getElementById('sum-fuel-lifetime').innerText = `🔴 Долг: ${s.lifetime_fuel_debt} л`;
+                        document.getElementById('sum-fuel-lifetime').className = "text-base font-black mt-0.5 text-red-300";
+                    } else {
+                        document.getElementById('sum-fuel-lifetime').innerText = `🟢 Остаток: ${Math.abs(s.lifetime_fuel_debt)} л`;
+                        document.getElementById('sum-fuel-lifetime').className = "text-base font-black mt-0.5 text-green-300";
+                    }
+                } else {
+                    fuelSummaryCard.classList.add('hidden');
+                }
+
                 document.getElementById('month-summary').classList.remove('hidden');
 
                 container.innerHTML = '';
                 resData.shifts.forEach((shift) => {
                     const card = document.createElement('div');
                     card.className = "bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center w-full box-border";
+                    
+                    // Посуточный расчет топлива выводится только вам
+                    let fuelDayRow = '';
+                    if (userId === MY_TELEGRAM_ID) {
+                        const fDebt = shift.shift_debt;
+                        if (fDebt >= 0) {
+                            fuelDayRow = `<p class="text-red-500">⛽ Топливо: +${fDebt} л (долг за смену)</p>`;
+                        } else {
+                            fuelDayRow = `<p class="text-green-600">⛽ Топливо: ${fDebt} л (остаток/сэкономлено)</p>`;
+                        }
+                    }
+
                     card.innerHTML = `
                         <div class="text-xs space-y-1">
                             <p class="font-bold text-sm text-gray-900">${shift.date}</p>
                             <p class="text-gray-500">🏎️ Пробег: <span class="font-semibold text-gray-700">${shift.distance} км</span></p>
                             <p class="text-gray-500">⏱️ Время: <span class="font-semibold text-gray-700">${shift.hours_calculated} ч</span></p>
                             <p class="text-gray-500">📦 Заказы: <span class="font-semibold text-gray-700">${shift.orders} шт</span></p>
+                            ${fuelDayRow}
                             <p class="text-sm text-green-600 font-bold mt-1">💰 ${shift.salary} руб.</p>
                         </div>
                         <button onclick="deleteShift(${shift.id}, '${shift.date}')" class="text-red-500 hover:text-red-700 p-2 focus:outline-none">
