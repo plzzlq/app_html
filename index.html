@@ -7,11 +7,15 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Стили для анимации плавного перелистывания страниц */
+        /* Гарантируем, что отступы (padding) не ломают общую ширину элементов */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        /* Анимация перелистывания страниц */
         .tab-content {
-            transition: opacity 0.25s ease, transform 0.25s ease;
+            transition: opacity 0.2s ease, transform 0.2s ease;
             opacity: 0;
-            transform: translateY(10px);
+            transform: translateY(8px);
             display: none;
         }
         .tab-content.active {
@@ -19,105 +23,105 @@
             opacity: 1;
             transform: translateY(0);
         }
-        /* Убираем системный скроллбар, чтобы интерфейс выглядел как нативное приложение */
-        ::-webkit-scrollbar {
-            width: 0px;
-            background: transparent;
+        /* Сброс системных ограничений для поля даты на iOS/Android */
+        input[type="date"] {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            min-width: 0;
         }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans antialiased min-h-screen pb-6 select-none">
+<body class="bg-gray-100 text-gray-800 font-sans antialiased min-h-screen pb-8 overflow-x-hidden select-none">
 
-    <div class="bg-blue-600 text-white px-4 py-2.5 shadow-md sticky top-0 z-50 flex justify-between items-center">
-        <h1 class="text-base font-bold">Мой Журнал Смен</h1>
-        <span id="user-display" class="text-xs opacity-90 bg-blue-700 px-2 py-1 rounded-md font-medium">Загрузка...</span>
+    <div class="bg-blue-600 text-white px-4 py-3 shadow-md sticky top-0 z-50 flex justify-between items-center w-full box-border">
+        <h1 class="text-base font-bold truncate">Журнал смен</h1>
+        <span id="user-display" class="text-xs opacity-90 bg-blue-700 px-2 py-1 rounded font-medium whitespace-nowrap">Загрузка...</span>
     </div>
 
-    <div class="flex bg-white border-b border-gray-200 sticky top-[44px] z-40 shadow-sm">
-        <button onclick="switchTab('input-tab')" id="btn-input-tab" class="w-1/2 py-2.5 text-center text-sm font-bold border-b-2 border-blue-600 text-blue-600 focus:outline-none transition-all duration-200">
+    <div class="flex bg-white border-b border-gray-200 sticky top-[48px] z-40 shadow-sm w-full box-border">
+        <button onclick="switchTab('input-tab')" id="btn-input-tab" class="w-1/2 py-3 text-center text-sm font-bold border-b-2 border-blue-600 text-blue-600 focus:outline-none transition-all duration-150">
             📝 Новая смена
         </button>
-        <button onclick="switchTab('history-tab')" id="btn-history-tab" class="w-1/2 py-2.5 text-center text-sm font-medium border-b-2 border-transparent text-gray-500 focus:outline-none transition-all duration-200">
-            📊 История и Статистика
+        <button onclick="switchTab('history-tab')" id="btn-history-tab" class="w-1/2 py-3 text-center text-sm font-medium border-b-2 border-transparent text-gray-500 focus:outline-none transition-all duration-150">
+            📊 История и статистика
         </button>
     </div>
 
-    <div class="max-w-md mx-auto p-3">
+    <div class="w-full max-w-md mx-auto px-4 py-3 box-border overflow-x-hidden">
         
-        <div id="input-tab" class="tab-content active">
-            <form id="shift-form" onsubmit="submitForm(event)" class="bg-white p-4 rounded-xl shadow-sm space-y-3">
+        <div id="input-tab" class="tab-content active w-full box-border">
+            <form id="shift-form" onsubmit="submitForm(event)" class="bg-white p-4 rounded-xl shadow-sm space-y-4 w-full box-border">
                 
-                <div>
+                <div class="w-full box-border">
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Дата смены</label>
-                    <input type="date" id="date" required class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50">
+                    <input type="date" id="date" required class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50 box-border block">
                 </div>
                 
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Одометр старт</label>
-                        <input type="number" id="odo_start" step="0.1" min="0" required placeholder="0.0" class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Одометр конец</label>
-                        <input type="number" id="odo_end" step="0.1" min="0" required placeholder="0.0" class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    </div>
+                <div class="w-full box-border">
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Одометр начало</label>
+                    <input type="number" id="odo_start" step="1" min="0" required placeholder="0" class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none box-border block">
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Топливо (литры)</label>
-                        <input type="number" id="fuel_add" step="0.1" min="0" required value="0" class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Заказы (шт)</label>
-                        <input type="number" id="orders" min="0" required placeholder="0" class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    </div>
+                <div class="w-full box-border">
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Одометр конец</label>
+                    <input type="number" id="odo_end" step="1" min="0" required placeholder="0" class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none box-border block">
                 </div>
 
-                <div>
+                <div class="w-full box-border">
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Заправлено топлива (литры)</label>
+                    <input type="number" id="fuel_add" step="1" min="0" required value="0" class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none box-border block">
+                </div>
+
+                <div class="w-full box-border">
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Количество заказов (шт)</label>
+                    <input type="number" id="orders" min="0" required placeholder="0" class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none box-border block">
+                </div>
+
+                <div class="w-full box-border">
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Фактическое время (часы)</label>
-                    <input type="number" id="raw_hours" step="0.1" min="0.1" max="24" required placeholder="Например: 8.4 или 9.5" class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <input type="number" id="raw_hours" step="0.5" min="0.5" max="24" required placeholder="Кратное 0.5" class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none box-border block">
                 </div>
 
-                <button type="submit" class="w-full bg-blue-600 text-white text-sm font-bold py-2.5 rounded-lg shadow hover:bg-blue-700 active:transform active:scale-[0.98] transition-all focus:outline-none mt-2">
+                <button type="submit" class="w-full bg-blue-600 text-white text-base font-bold py-3.5 rounded-lg shadow-md hover:bg-blue-700 active:transform active:scale-[0.98] transition-all focus:outline-none mt-4 block">
                     💾 Сохранить смену
                 </button>
             </form>
         </div>
 
-        <div id="history-tab" class="tab-content">
+        <div id="history-tab" class="tab-content w-full box-border">
             
-            <div class="bg-white p-3 rounded-xl shadow-sm space-y-2">
-                <div class="flex items-center justify-between border-b pb-1.5">
-                    <button onclick="changeYear(-1)" class="px-3 py-1 text-blue-600 font-bold text-base focus:outline-none">◀️</button>
+            <div class="bg-white p-4 rounded-xl shadow-sm space-y-3 w-full box-border">
+                <div class="flex items-center justify-between border-b pb-2">
+                    <button onclick="changeYear(-1)" class="px-4 py-2 text-blue-600 font-bold text-lg focus:outline-none active:bg-gray-100 rounded">◀️</button>
                     <span id="current-year-display" class="font-bold text-base text-gray-700">2026 год</span>
-                    <button onclick="changeYear(1)" class="px-3 py-1 text-blue-600 font-bold text-base focus:outline-none">▶️</button>
+                    <button onclick="changeYear(1)" class="px-4 py-2 text-blue-600 font-bold text-lg focus:outline-none active:bg-gray-100 rounded">▶️</button>
                 </div>
-                <div class="grid grid-cols-2 gap-1.5" id="months-grid">
+                <div class="grid grid-cols-2 gap-2 w-full box-border" id="months-grid">
                     </div>
             </div>
 
-            <div id="month-summary" class="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-4 rounded-xl shadow-sm grid grid-cols-2 gap-3 hidden">
+            <div id="month-summary" class="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-4 rounded-xl shadow-sm grid grid-cols-2 gap-3 hidden w-full box-border">
                 <div>
                     <p class="text-[10px] opacity-75 uppercase font-bold tracking-wider">Общая ЗП</p>
-                    <p id="sum-salary" class="text-lg font-black mt-0.5">0.00 руб</p>
+                    <p id="sum-salary" class="text-base font-black mt-0.5">0.00 руб</p>
                 </div>
                 <div>
                     <p class="text-[10px] opacity-75 uppercase font-bold tracking-wider">Рабочих дней</p>
-                    <p id="sum-days" class="text-lg font-black mt-0.5">0 дней</p>
+                    <p id="sum-days" class="text-base font-black mt-0.5">0 дней</p>
                 </div>
                 <div>
                     <p class="text-[10px] opacity-75 uppercase font-bold tracking-wider">Общие часы</p>
-                    <p id="sum-hours" class="text-lg font-black mt-0.5">0.0 ч</p>
+                    <p id="sum-hours" class="text-base font-black mt-0.5">0.0 ч</p>
                 </div>
                 <div>
                     <p class="text-[10px] opacity-75 uppercase font-bold tracking-wider">Ср. ЗП за смену</p>
-                    <p id="sum-avg" class="text-lg font-black mt-0.5">0.00 руб</p>
+                    <p id="sum-avg" class="text-base font-black mt-0.5">0.00 руб</p>
                 </div>
             </div>
 
-            <div id="shifts-container" class="space-y-2.5">
-                <p class="text-center text-xs text-gray-500 py-4">Выберите месяц выше для загрузки данных...</p>
+            <div id="shifts-container" class="space-y-3 w-full box-border">
+                <p class="text-center text-sm text-gray-500 py-6">Выберите месяц выше для загрузки данных...</p>
             </div>
         </div>
 
@@ -126,14 +130,12 @@
     <script>
         const tg = window.Telegram.WebApp;
         
-        // Синхронизируем работу с ТГ и открываем приложение на максимум
         tg.ready();
         tg.expand();
         
         // ВНИМАНИЕ: Сюда впишите ссылку на ваш бэкенд на Render!
-        const API_BASE_URL = 'https://ваш-бэкенд.onrender.com'; 
+        const API_BASE_URL = 'https://testbot-b4gh.onrender.com'; 
 
-        // Стабильное извлечение Имени + Фамилии из Telegram
         const user = tg.initDataUnsafe?.user;
         let userName = "Водитель"; 
 
@@ -169,9 +171,9 @@
                 btn.innerText = mName;
                 
                 if (mNum === selectedMonth) {
-                    btn.className = "py-1.5 text-xs font-bold rounded-lg bg-blue-600 text-white focus:outline-none shadow-sm transition-all";
+                    btn.className = "py-2.5 text-sm font-bold rounded-lg bg-blue-600 text-white focus:outline-none shadow-sm transition-all";
                 } else {
-                    btn.className = "py-1.5 text-xs font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 focus:outline-none transition-all";
+                    btn.className = "py-2.5 text-sm font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 focus:outline-none transition-all";
                 }
                 
                 btn.onclick = () => {
@@ -189,36 +191,31 @@
             loadHistory();
         }
 
-        // Плавная анимация переключения вкладок
         function switchTab(tabId) {
             const activeContent = document.querySelector('.tab-content.active');
             const targetContent = document.getElementById(tabId);
             
             if (activeContent && activeContent.id === tabId) return;
 
-            // Сначала убираем активный класс (запускается CSS opacity/transform увядание)
             if (activeContent) {
                 activeContent.classList.remove('active');
             }
 
-            // Ждем завершения анимации увядания, затем показываем новую вкладку
             setTimeout(() => {
                 document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
                 targetContent.style.display = 'block';
                 
-                // Микро-таймаут для того, чтобы браузер успел применить display: block перед добавлением анимации
                 setTimeout(() => {
                     targetContent.classList.add('active');
                 }, 20);
             }, 150);
 
-            // Смена стилей кнопок навигации
             if (tabId === 'input-tab') {
-                document.getElementById('btn-input-tab').className = "w-1/2 py-2.5 text-center text-sm font-bold border-b-2 border-blue-600 text-blue-600 focus:outline-none";
-                document.getElementById('btn-history-tab').className = "w-1/2 py-2.5 text-center text-sm font-medium border-b-2 border-transparent text-gray-500 focus:outline-none";
+                document.getElementById('btn-input-tab').className = "w-1/2 py-3 text-center text-sm font-bold border-b-2 border-blue-600 text-blue-600 focus:outline-none";
+                document.getElementById('btn-history-tab').className = "w-1/2 py-3 text-center text-sm font-medium border-b-2 border-transparent text-gray-500 focus:outline-none";
             } else {
-                document.getElementById('btn-history-tab').className = "w-1/2 py-2.5 text-center text-sm font-bold border-b-2 border-blue-600 text-blue-600 focus:outline-none";
-                document.getElementById('btn-input-tab').className = "w-1/2 py-2.5 text-center text-sm font-medium border-b-2 border-transparent text-gray-500 focus:outline-none";
+                document.getElementById('btn-history-tab').className = "w-1/2 py-3 text-center text-sm font-bold border-b-2 border-blue-600 text-blue-600 focus:outline-none";
+                document.getElementById('btn-input-tab').className = "w-1/2 py-3 text-center text-sm font-medium border-b-2 border-transparent text-gray-500 focus:outline-none";
                 renderMonthsGrid();
                 loadHistory();
             }
@@ -228,6 +225,7 @@
             event.preventDefault();
             
             const rawDate = document.getElementById('date').value; 
+            if (!rawDate) return;
             const [y, m, d] = rawDate.split('-');
             const formattedDate = `${d}.${m}.${y}`;
 
@@ -286,7 +284,7 @@
 
         async function loadHistory() {
             const container = document.getElementById('shifts-container');
-            container.innerHTML = '<p class="text-center text-xs text-gray-500 py-6">⏳ Загрузка смен...</p>';
+            container.innerHTML = '<p class="text-center text-sm text-gray-500 py-6">⏳ Загрузка смен...</p>';
             document.getElementById('month-summary').classList.add('hidden');
 
             const paddedMonth = String(selectedMonth).padStart(2, '0');
@@ -296,7 +294,7 @@
                 const resData = await response.json();
 
                 if (!response.ok || resData.status === 'empty') {
-                    container.innerHTML = `<p class="text-center text-xs text-gray-500 py-6">${resData.message || 'Записей нет.'}</p>`;
+                    container.innerHTML = `<p class="text-center text-sm text-gray-500 py-6">${resData.message || 'Записей нет.'}</p>`;
                     return;
                 }
 
@@ -310,14 +308,14 @@
                 container.innerHTML = '';
                 resData.shifts.forEach((shift) => {
                     const card = document.createElement('div');
-                    card.className = "bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center";
+                    card.className = "bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center w-full box-border";
                     card.innerHTML = `
-                        <div class="text-xs space-y-0.5">
+                        <div class="text-xs space-y-1">
                             <p class="font-bold text-sm text-gray-900">${shift.date}</p>
                             <p class="text-gray-500">🏎️ Пробег: <span class="font-semibold text-gray-700">${shift.distance} км</span></p>
                             <p class="text-gray-500">⏱️ Время: <span class="font-semibold text-gray-700">${shift.hours_calculated} ч</span></p>
                             <p class="text-gray-500">📦 Заказы: <span class="font-semibold text-gray-700">${shift.orders} шт</span></p>
-                            <p class="text-sm text-green-600 font-bold mt-0.5">💰 ${shift.salary} руб.</p>
+                            <p class="text-sm text-green-600 font-bold mt-1">💰 ${shift.salary} руб.</p>
                         </div>
                         <button onclick="deleteShift(${shift.id}, '${shift.date}')" class="text-red-500 hover:text-red-700 p-2 focus:outline-none">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -327,7 +325,7 @@
                 });
 
             } catch (error) {
-                container.innerHTML = '<p class="text-center text-xs text-red-500 py-6">❌ Ошибка подключения.</p>';
+                container.innerHTML = '<p class="text-center text-sm text-red-500 py-6">❌ Ошибка подключения.</p>';
             }
         }
 
