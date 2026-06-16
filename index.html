@@ -109,10 +109,10 @@
     <div id="secret-admin-layout" class="hidden w-full max-w-md mx-auto px-4 py-3 box-border">
         <div class="flex justify-between items-center mb-4 bg-gray-800 text-white p-3 rounded-xl shadow-md">
             <button onclick="exitAdminMode()" class="flex items-center space-x-1 text-xs font-bold bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-lg transition-all">
-                <span>⬅️</span> <span>Назад</span>
+                <span>⬅️ Назад</span>
             </button>
-            <h2 class="text-sm font-black uppercase tracking-wider">Панель Управления</h2>
-            <button onclick="loadAdminHistory()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-2.5 py-2 rounded-lg font-bold">🔄</button>
+            <h2 class="text-sm font-black uppercase tracking-wider">Админ Панель</h2>
+            <button onclick="loadAdminHistory()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-2 rounded-lg font-bold">🔄</button>
         </div>
         
         <div class="bg-white p-3 rounded-xl shadow-sm mb-3 box-border w-full">
@@ -123,7 +123,7 @@
         </div>
 
         <div id="admin-shifts-container" class="space-y-3 w-full box-border">
-            <p class="text-center text-sm text-gray-500 py-6">Загрузка данных базы...</p>
+            <p class="text-center text-sm text-gray-500 py-6">Загрузка всеобщих данных...</p>
         </div>
     </div>
 
@@ -151,7 +151,7 @@
         let historyClickCount = 0;
         let lastHistoryClickTime = 0;
 
-        // По умолчанию скрываем блок заправки для обычных пользователей
+        // Ограничение видимости топливного поля ввода на главной странице
         if (userId !== MY_TELEGRAM_ID) {
             const fuelBlock = document.getElementById('fuel-block');
             if (fuelBlock) fuelBlock.style.display = 'none';
@@ -165,7 +165,7 @@
 
         const RU_MONTHS_FULL = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
 
-        // Обработка 5 быстрых кликов по кнопке История
+        // Нажатие на "История" с алгоритмом проверки быстрого клика
         function handleHistoryClick() {
             const currentTime = new Date().getTime();
             
@@ -177,35 +177,29 @@
             
             lastHistoryClickTime = currentTime;
 
-            // Если кликнули 5 раз быстро И это ТЫ (проверка по ID)
-            if (historyClickCount === 5 && userId === MY_TELEGRAM_ID) {
-                enterAdminMode();
-                return; // Прерываем стандартное открытие истории
+            // Если кликнули 5 раз быстро И твой ID совпадает
+            if (historyClickCount === 5) {
+                if (userId === MY_TELEGRAM_ID) {
+                    historyClickCount = 0; // Сбрасываем счетчик
+                    enterAdminMode();
+                    return;
+                }
             }
 
+            // Обычный переход к истории, если условия скрытого входа не выполнены
             switchTab('history-tab');
         }
 
-        // Вход в режим админа (скрываем основное приложение, показываем админку)
         function enterAdminMode() {
             document.getElementById('main-app-layout').classList.add('hidden');
             document.getElementById('secret-admin-layout').classList.remove('hidden');
-            
-            // Также временно включаем показ скрытых элементов топлива на случай, если они нужны
-            const fuelSummaryCard = document.getElementById('fuel-summary-card');
-            if (fuelSummaryCard) fuelSummaryCard.classList.remove('hidden');
-            const fuelBlock = document.getElementById('fuel-block');
-            if (fuelBlock) fuelBlock.style.display = 'block';
-
             loadAdminHistory();
         }
 
-        // Выход из режима админа по кнопке «Назад»
         function exitAdminMode() {
             document.getElementById('secret-admin-layout').classList.add('hidden');
             document.getElementById('main-app-layout').classList.remove('hidden');
-            historyClickCount = 0; // Обнуляем счетчик кликов
-            switchTab('input-tab'); // Возвращаем на вкладку ввода смены
+            switchTab('input-tab');
         }
 
         function renderMonthsGrid() {
@@ -327,7 +321,7 @@
                 const resData = await response.json();
 
                 if (!response.ok || resData.status === 'empty') {
-                    container.innerHTML = `<p class="text-center text-sm text-gray-500 py-6">${resData.message || 'Записей нет.'}</p>';
+                    container.innerHTML = `<p class="text-center text-sm text-gray-500 py-6">${resData.message || 'Записей нет.'}</p>`;
                     return;
                 }
 
@@ -381,7 +375,7 @@
             } catch { container.innerHTML = '<p class="text-center text-sm text-red-500 py-6">❌ Ошибка подключения.</p>'; }
         }
 
-        // ===== АДМИН-ФУНКЦИИ (РАБОТАЮТ ТОЛЬКО В СЕКРЕТНОМ РЕЖИМЕ) =====
+        // ===== АДМИН-ФУНКЦИИ =====
 
         async function loadAdminHistory() {
             const container = document.getElementById('admin-shifts-container');
