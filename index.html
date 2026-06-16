@@ -7,11 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Гарантируем, что отступы (padding) не ломают общую ширину элементов */
-        *, *::before, *::after {
-            box-sizing: border-box;
-        }
-        /* Анимация перелистывания страниц */
+        *, *::before, *::after { box-sizing: border-box; }
         .tab-content {
             transition: opacity 0.2s ease, transform 0.2s ease;
             opacity: 0;
@@ -23,7 +19,6 @@
             opacity: 1;
             transform: translateY(0);
         }
-        /* Сброс системных ограничений для поля даты на iOS/Android */
         input[type="date"] {
             -webkit-appearance: none;
             -moz-appearance: none;
@@ -40,11 +35,14 @@
     </div>
 
     <div class="flex bg-white border-b border-gray-200 sticky top-[48px] z-40 shadow-sm w-full box-border">
-        <button onclick="switchTab('input-tab')" id="btn-input-tab" class="w-1/2 py-3 text-center text-sm font-bold border-b-2 border-blue-600 text-blue-600 focus:outline-none transition-all duration-150">
-            📝 Новая смена
+        <button onclick="switchTab('input-tab')" id="btn-input-tab" class="w-1/3 py-3 text-center text-xs font-bold border-b-2 border-blue-600 text-blue-600 focus:outline-none transition-all duration-150">
+            📝 Смена
         </button>
-        <button onclick="switchTab('history-tab')" id="btn-history-tab" class="w-1/2 py-3 text-center text-sm font-medium border-b-2 border-transparent text-gray-500 focus:outline-none transition-all duration-150">
-            📊 История и статистика
+        <button onclick="switchTab('history-tab')" id="btn-history-tab" class="w-1/3 py-3 text-center text-xs font-medium border-b-2 border-transparent text-gray-500 focus:outline-none transition-all duration-150">
+            📊 История
+        </button>
+        <button onclick="switchTab('admin-tab')" id="btn-admin-tab" class="w-1/3 py-3 text-center text-xs font-medium border-b-2 border-transparent text-gray-500 focus:outline-none transition-all duration-150 hidden">
+            👑 Админ
         </button>
     </div>
 
@@ -52,37 +50,30 @@
         
         <div id="input-tab" class="tab-content active w-full box-border">
             <form id="shift-form" onsubmit="submitForm(event)" class="bg-white p-4 rounded-xl shadow-sm space-y-4 w-full box-border">
-                
                 <div class="w-full box-border">
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Дата смены</label>
                     <input type="date" id="date" required class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50 box-border block">
                 </div>
-                
                 <div class="w-full box-border">
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Одометр старт</label>
-                    <input type="number" id="odo_start" step="1" min="0" required placeholder="0.0" class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none box-border block">
+                    <input type="number" id="odo_start" step="1" min="0" required placeholder="0" class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none box-border block">
                 </div>
-
                 <div class="w-full box-border">
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Одометр конец</label>
-                    <input type="number" id="odo_end" step="1" min="0" required placeholder="0.0" class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none box-border block">
+                    <input type="number" id="odo_end" step="1" min="0" required placeholder="0" class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none box-border block">
                 </div>
-
                 <div class="w-full box-border" id="fuel-block">
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Заправлено топлива (литры)</label>
                     <input type="number" id="fuel_add" step="1" min="0" required value="0" class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none box-border block">
                 </div>
-
                 <div class="w-full box-border">
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Количество заказов (шт)</label>
                     <input type="number" id="orders" min="0" required placeholder="0" class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none box-border block">
                 </div>
-
                 <div class="w-full box-border">
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Фактическое время (часы)</label>
-                    <input type="number" id="raw_hours" step="0.5" min="0.5" max="24" required placeholder="Кратное 0,5" class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none box-border block">
+                    <input type="number" id="raw_hours" step="5" min="0.5" max="24" required placeholder="Кратное 0,5" class="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none box-border block">
                 </div>
-
                 <button type="submit" class="w-full bg-blue-600 text-white text-base font-bold py-3.5 rounded-lg shadow-md hover:bg-blue-700 active:transform active:scale-[0.98] transition-all focus:outline-none mt-4 block">
                     💾 Сохранить смену
                 </button>
@@ -90,7 +81,6 @@
         </div>
 
         <div id="history-tab" class="tab-content w-full box-border">
-            
             <div class="bg-white p-4 rounded-xl shadow-sm space-y-3 w-full box-border">
                 <div class="flex items-center justify-between border-b pb-2">
                     <button onclick="changeYear(-1)" class="px-4 py-2 text-blue-600 font-bold text-lg focus:outline-none active:bg-gray-100 rounded">◀️</button>
@@ -101,30 +91,28 @@
             </div>
 
             <div id="month-summary" class="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-4 rounded-xl shadow-sm grid grid-cols-2 gap-3 hidden w-full box-border">
-                <div>
-                    <p class="text-[10px] opacity-75 uppercase font-bold tracking-wider">Общая ЗП</p>
-                    <p id="sum-salary" class="text-base font-black mt-0.5">0.00 руб</p>
-                </div>
-                <div>
-                    <p class="text-[10px] opacity-75 uppercase font-bold tracking-wider">Рабочих дней</p>
-                    <p id="sum-days" class="text-base font-black mt-0.5">0 дней</p>
-                </div>
-                <div>
-                    <p class="text-[10px] opacity-75 uppercase font-bold tracking-wider">Общие часы</p>
-                    <p id="sum-hours" class="text-base font-black mt-0.5">0.0 ч</p>
-                </div>
-                <div>
-                    <p class="text-[10px] opacity-75 uppercase font-bold tracking-wider">Ср. ЗП за смену</p>
-                    <p id="sum-avg" class="text-base font-black mt-0.5">0.00 руб</p>
-                </div>
+                <div><p class="text-[10px] opacity-75 uppercase font-bold tracking-wider">Общая ЗП</p><p id="sum-salary" class="text-base font-black mt-0.5">0.00 руб</p></div>
+                <div><p class="text-[10px] opacity-75 uppercase font-bold tracking-wider">Рабочих дней</p><p id="sum-days" class="text-base font-black mt-0.5">0 дней</p></div>
+                <div><p class="text-[10px] opacity-75 uppercase font-bold tracking-wider">Общие часы</p><p id="sum-hours" class="text-base font-black mt-0.5">0.0 ч</p></div>
+                <div><p class="text-[10px] opacity-75 uppercase font-bold tracking-wider">Ср. ЗП за смену</p><p id="sum-avg" class="text-base font-black mt-0.5">0.00 руб</p></div>
                 <div id="fuel-summary-card" class="col-span-2 border-t border-blue-500 pt-2 mt-1 hidden">
                     <p class="text-[10px] opacity-75 uppercase font-bold tracking-wider">Общий баланс топлива (Все время)</p>
                     <p id="sum-fuel-lifetime" class="text-base font-black mt-0.5">0.00 л</p>
                 </div>
             </div>
 
-            <div id="shifts-container" class="space-y-3 w-full box-border">
+            <div id="shifts-container" class="space-y-3 w-full box-border mt-3">
                 <p class="text-center text-sm text-gray-500 py-6">Выберите месяц выше для загрузки данных...</p>
+            </div>
+        </div>
+
+        <div id="admin-tab" class="tab-content w-full box-border">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="text-base font-bold text-gray-800">Все смены системы</h2>
+                <button onclick="loadAdminHistory()" class="bg-blue-600 text-white text-xs px-3 py-1.5 rounded font-bold">🔄 Обновить</button>
+            </div>
+            <div id="admin-shifts-container" class="space-y-3 w-full box-border">
+                <p class="text-center text-sm text-gray-500 py-6">Загрузка всеобщих данных...</p>
             </div>
         </div>
 
@@ -132,7 +120,6 @@
 
     <script>
         const tg = window.Telegram.WebApp;
-        
         tg.ready();
         tg.expand();
         
@@ -144,19 +131,18 @@
 
         if (user && user.first_name) {
             userName = user.first_name;
-            if (user.last_name) {
-                userName += ` ${user.last_name}`;
-            }
+            if (user.last_name) userName += ` ${user.last_name}`;
         }
 
         const userId = user?.id || 123456789;
         document.getElementById('user-display').innerText = userName;
 
-        if (userId !== MY_TELEGRAM_ID) {
+        // Если вы зашли со своего аккаунта, открываем скрытые функции
+        if (userId === MY_TELEGRAM_ID) {
+            document.getElementById('btn-admin-tab').classList.remove('hidden');
+        } else {
             const fuelBlock = document.getElementById('fuel-block');
-            if (fuelBlock) {
-                fuelBlock.style.display = 'none';
-            }
+            if (fuelBlock) fuelBlock.style.display = 'none';
         }
 
         const now = new Date();
@@ -165,10 +151,7 @@
 
         document.getElementById('date').value = now.toISOString().split('T')[0];
 
-        const RU_MONTHS_FULL = [
-            "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
-            "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"
-        ];
+        const RU_MONTHS_FULL = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
 
         function renderMonthsGrid() {
             document.getElementById('current-year-display').innerText = `${selectedYear} год`;
@@ -179,12 +162,9 @@
                 const mNum = index + 1;
                 const btn = document.createElement('button');
                 btn.innerText = mName;
-                
-                if (mNum === selectedMonth) {
-                    btn.className = "py-2.5 text-sm font-bold rounded-lg bg-blue-600 text-white focus:outline-none shadow-sm transition-all";
-                } else {
-                    btn.className = "py-2.5 text-sm font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 focus:outline-none transition-all";
-                }
+                btn.className = mNum === selectedMonth  
+                    ? "py-2.5 text-xs font-bold rounded-lg bg-blue-600 text-white focus:outline-none shadow-sm transition-all"
+                    : "py-2.5 text-xs font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 focus:outline-none transition-all";
                 
                 btn.onclick = () => {
                     selectedMonth = mNum;
@@ -203,37 +183,37 @@
 
         function switchTab(tabId) {
             const activeContent = document.querySelector('.tab-content.active');
-            const targetContent = document.getElementById(tabId);
-            
             if (activeContent && activeContent.id === tabId) return;
 
-            if (activeContent) {
-                activeContent.classList.remove('active');
-            }
+            if (activeContent) activeContent.classList.remove('active');
 
             setTimeout(() => {
                 document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-                targetContent.style.display = 'block';
-                
-                setTimeout(() => {
-                    targetContent.classList.add('active');
-                }, 20);
+                document.getElementById(tabId).style.display = 'block';
+                setTimeout(() => { document.getElementById(tabId).classList.add('active'); }, 20);
             }, 150);
 
-            if (tabId === 'input-tab') {
-                document.getElementById('btn-input-tab').className = "w-1/2 py-3 text-center text-sm font-bold border-b-2 border-blue-600 text-blue-600 focus:outline-none";
-                document.getElementById('btn-history-tab').className = "w-1/2 py-3 text-center text-sm font-medium border-b-2 border-transparent text-gray-500 focus:outline-none";
-            } else {
-                document.getElementById('btn-history-tab').className = "w-1/2 py-3 text-center text-sm font-bold border-b-2 border-blue-600 text-blue-600 focus:outline-none";
-                document.getElementById('btn-input-tab').className = "w-1/2 py-3 text-center text-sm font-medium border-b-2 border-transparent text-gray-500 focus:outline-none";
+            // Смена стилей кнопок меню
+            ['btn-input-tab', 'btn-history-tab', 'btn-admin-tab'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (id === `btn-${tabId}`) {
+                    el.className = "w-1/3 py-3 text-center text-xs font-bold border-b-2 border-blue-600 text-blue-600 focus:outline-none";
+                } else {
+                    el.className = "w-1/3 py-3 text-center text-xs font-medium border-b-2 border-transparent text-gray-500 focus:outline-none";
+                }
+            });
+
+            if (tabId === 'history-tab') {
                 renderMonthsGrid();
                 loadHistory();
+            } else if (tabId === 'admin-tab') {
+                loadAdminHistory();
             }
         }
 
         async function submitForm(event) {
             event.preventDefault();
-            
             const rawDate = document.getElementById('date').value; 
             if (!rawDate) return;
             const [y, m, d] = rawDate.split('-');
@@ -253,41 +233,29 @@
             };
 
             if (payload.odo_start < 0 || payload.odo_end < 0 || payload.fuel_add < 0 || payload.orders < 0) {
-                tg.showAlert("❌ Значения полей не могут быть отрицательными!");
-                return;
+                tg.showAlert("❌ Значения полей не могут быть отрицательными!"); return;
             }
             if (payload.odo_end < payload.odo_start) {
-                tg.showAlert(`❌ Конечный одометр меньше начального (${payload.odo_start})!`);
-                return;
-            }
-            if (payload.raw_hours <= 0 || payload.raw_hours > 24) {
-                tg.showAlert("❌ Округленное время смены должно быть от 0.5 до 24 часов!");
-                return;
+                tg.showAlert(`❌ Конечный одометр меньше начального (${payload.odo_start})!`); return;
             }
 
             tg.MainButton.setText("Отправка смены...").show().disable();
-
             try {
                 const response = await fetch(`${API_BASE_URL}/api/save_shift`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                
-                const result = await response.json();
-                
                 if (response.ok) {
-                    tg.showAlert(`🎉 Смена успешно сохранена!\nЧасы округлены вниз: ${rawHours} ч.`);
+                    tg.showAlert(`🎉 Смена успешно сохранена!`);
                     document.getElementById('shift-form').reset();
                     document.getElementById('date').value = now.toISOString().split('T')[0];
                 } else {
+                    const result = await response.json();
                     tg.showAlert(`❌ Ошибка: ${result.error}`);
                 }
-            } catch (error) {
-                tg.showAlert("❌ Ошибка сети.");
-            } finally {
-                tg.MainButton.hide();
-            }
+            } catch { tg.showAlert("❌ Ошибка сети."); }
+            finally { tg.MainButton.hide(); }
         }
 
         async function loadHistory() {
@@ -296,7 +264,6 @@
             document.getElementById('month-summary').classList.add('hidden');
 
             const paddedMonth = String(selectedMonth).padStart(2, '0');
-
             try {
                 const response = await fetch(`${API_BASE_URL}/api/get_stats?user_id=${userId}&year=${selectedYear}&month=${paddedMonth}`);
                 const resData = await response.json();
@@ -315,34 +282,25 @@
                 const fuelSummaryCard = document.getElementById('fuel-summary-card');
                 if (userId === MY_TELEGRAM_ID) {
                     fuelSummaryCard.classList.remove('hidden');
-                    // Выводим исходное число напрямую (без Math.abs), сохраняя минус
                     document.getElementById('sum-fuel-lifetime').innerText = `Остаток: ${s.lifetime_fuel_debt} л`;
-                    document.getElementById('sum-fuel-lifetime').className = "text-base font-black mt-0.5";
                 } else {
                     fuelSummaryCard.classList.add('hidden');
                 }
 
                 document.getElementById('month-summary').classList.remove('hidden');
-
                 container.innerHTML = '';
+
                 resData.shifts.forEach((shift) => {
                     const card = document.createElement('div');
                     card.className = "bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center w-full box-border";
                     
                     let fuelDayRow = '';
                     if (userId === MY_TELEGRAM_ID) {
-                        const fAdded = shift.fuel_add;       
-                        const fCons = shift.consumption;     
-                        const fDebt = shift.shift_debt;      
-                        
-                        // Выводим исходный знак напрямую
-                        let totalDayResult = `<span class="font-bold">Остаток за день: ${fDebt} л</span>`;
-        
                         fuelDayRow = `
                             <div class="bg-gray-50 p-2 rounded-lg border border-gray-100 mt-1.5 space-y-0.5 text-[11px]">
-                                <p class="text-gray-600">⛽ Заправлено: <span class="font-semibold text-gray-800">${fAdded} л</span></p>
-                                <p class="text-gray-600">📉 Расход (пробег): <span class="font-semibold text-gray-800">${fCons} л</span></p>
-                                <p class="pt-0.5 border-t border-gray-200 mt-0.5 text-gray-800">${totalDayResult}</p>
+                                <p class="text-gray-600">⛽ Заправлено: <span class="font-semibold text-gray-800">${shift.fuel_add} л</span></p>
+                                <p class="text-gray-600">📉 Расход (пробег): <span class="font-semibold text-gray-800">${shift.consumption} л</span></p>
+                                <p class="pt-0.5 border-t border-gray-200 mt-0.5 text-gray-800 font-bold">Остаток за день: ${shift.shift_debt} л</p>
                             </div>
                         `;
                     }
@@ -362,13 +320,56 @@
                     `;
                     container.appendChild(card);
                 });
-
-            } catch (error) {
-                container.innerHTML = '<p class="text-center text-sm text-red-500 py-6">❌ Ошибка подключения.</p>';
-            }
+            } catch { container.innerHTML = '<p class="text-center text-sm text-red-500 py-6">❌ Ошибка подключения.</p>'; }
         }
 
-        function deleteShift(shiftId, dateStr) {
+        // ===== АДМИН-ФУНКЦИИ ДЛЯ ФРОНТЕНДА =====
+
+        async function loadAdminHistory() {
+            const container = document.getElementById('admin-shifts-container');
+            container.innerHTML = '<p class="text-center text-sm text-gray-500 py-6">⏳ Загрузка всех смен базы данных...</p>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/admin/get_all_shifts?user_id=${userId}`);
+                const resData = await response.json();
+
+                if (!response.ok || resData.shifts.length === 0) {
+                    container.innerHTML = '<p class="text-center text-sm text-gray-500 py-6">База данных пуста или доступ отклонен.</p>';
+                    return;
+                }
+
+                container.innerHTML = '';
+                resData.shifts.forEach((shift) => {
+                    const card = document.createElement('div');
+                    card.className = "bg-white p-4 rounded-xl shadow-sm border-2 border-red-100 flex justify-between items-center w-full box-border";
+                    
+                    // Выделяем цветом ваши личные смены среди остальных для наглядности администрирования
+                    const isMyShift = parseInt(shift.user_id) === MY_TELEGRAM_ID;
+                    const driverBadge = isMyShift 
+                        ? `<span class="bg-blue-100 text-blue-800 text-[10px] px-1.5 py-0.5 rounded font-bold">Вы</span>`
+                        : `<span class="bg-gray-200 text-gray-700 text-[10px] px-1.5 py-0.5 rounded font-mono">ID: ${shift.user_id}</span>`;
+
+                    card.innerHTML = `
+                        <div class="text-xs space-y-1 flex-1">
+                            <div class="flex items-center space-x-2">
+                                <p class="font-bold text-sm text-gray-900">${shift.date}</p>
+                                ${driverBadge}
+                            </div>
+                            <p class="text-gray-500">🏎️ Одометр: <span class="font-semibold text-gray-700">${shift.odo_start} ➔ ${shift.odo_end} (${shift.distance} км)</span></p>
+                            <p class="text-gray-500">⏱️ Время: <span class="font-semibold text-gray-700">${shift.raw_hours} ч (Расчет: ${shift.hours_calculated} ч)</span></p>
+                            <p class="text-gray-500">📦 Заказы: <span class="font-semibold text-gray-700">${shift.orders} шт</span></p>
+                            <p class="text-sm text-green-600 font-bold mt-1">💰 Заработок: ${shift.salary} руб.</p>
+                        </div>
+                        <button onclick="deleteShift(${shift.id}, '${shift.date}', true)" class="text-red-500 hover:text-red-700 p-2 focus:outline-none self-start">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch { container.innerHTML = '<p class="text-center text-sm text-red-500 py-6">❌ Ошибка загрузки админ-панели.</p>'; }
+        }
+
+        function deleteShift(shiftId, dateStr, isAdminDelete = false) {
             tg.showConfirm(`Вы действительно хотите удалить смену за ${dateStr}?`, async (confirmed) => {
                 if (confirmed) {
                     try {
@@ -377,13 +378,15 @@
                         });
                         if (response.ok) {
                             tg.showPopup({ message: "🗑️ Запись удалена" });
-                            loadHistory();
+                            if (isAdminDelete) {
+                                loadAdminHistory();
+                            } else {
+                                loadHistory();
+                            }
                         } else {
                             tg.showAlert("❌ Не удалось удалить.");
                         }
-                    } catch (error) {
-                        tg.showAlert("❌ Сетевая ошибка.");
-                    }
+                    } catch { tg.showAlert("❌ Сетевая ошибка."); }
                 }
             });
         }
