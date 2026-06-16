@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Учет смен</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans antialiased min-h-screen pb-12">
+
+    <div class="bg-blue-600 text-white px-4 py-3 shadow-md sticky top-0 z-50 flex justify-between items-center">
+        <h1 class="text-lg font-bold">Мой Журнал Смен</h1>
+        <span id="user-display" class="text-sm opacity-90">Загрузка...</span>
+    </div>
+
+    <div class="flex bg-white border-b border-gray-200 sticky top-[52px] z-40 shadow-sm">
+        <button onclick="switchTab('input-tab')" id="btn-input-tab" class="w-1/2 py-3 text-center font-medium border-b-2 border-blue-600 text-blue-600 focus:outline-none">
+            📝 Новая смена
+        </button>
+        <button onclick="switchTab('history-tab')" id="btn-history-tab" class="w-1/2 py-3 text-center font-medium border-b-2 border-transparent text-gray-500 focus:outline-none">
+            📊 История и Статистика
+        </button>
+    </div>
+
+    <div class="max-w-md mx-auto p-4">
+        
+        <div id="input-tab" class="tab-content block space-y-4">
+            <form id="shift-form" onsubmit="submitForm(event)" class="bg-white p-5 rounded-xl shadow-sm space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-600 mb-1">Дата смены</label>
+                    <input type="date" id="date" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-600 mb-1">Одометр старт</label>
+                        <input type="number" id="odo_start" step="0.1" required placeholder="0.0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-600 mb-1">Одометр конец</label>
+                        <input type="number" id="odo_end" step="0.1" required placeholder="0.0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-600 mb-1">Заправлено топлива (литры)</label>
+                    <input type="number" id="fuel_add" step="0.1" required value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-600 mb-1">Фактическое время (часы)</label>
+                    <input type="number" id="raw_hours" step="0.1" required placeholder="Например, 9.5" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-600 mb-1">Количество заказов</label>
+                    <input type="number" id="orders" required placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow hover:bg-blue-700 active:transform active:scale-[0.98] transition focus:outline-none">
+                    💾 Сохранить смену
+                </button>
+            </form>
+        </div>
+
+        <div id="history-tab" class="tab-content hidden space-y-4">
+            <div class="bg-white p-4 rounded-xl shadow-sm flex items-center justify-between">
+                <label class="font-semibold text-gray-700">Выбрать месяц:</label>
+                <input type="month" id="month-picker" onchange="loadHistory()" class="border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div id="month-summary" class="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-5 rounded-xl shadow-sm grid grid-cols-2 gap-4 hidden">
+                <div>
+                    <p class="text-xs opacity-75 uppercase font-bold tracking-wider">Общая ЗП</p>
+                    <p id="sum-salary" class="text-xl font-black mt-1">0.00 руб</p>
+                </div>
+                <div>
+                    <p class="text-xs opacity-75 uppercase font-bold tracking-wider">Рабочих дней</p>
+                    <p id="sum-days" class="text-xl font-black mt-1">0 дней</p>
+                </div>
+                <div>
+                    <p class="text-xs opacity-75 uppercase font-bold tracking-wider">Общие часы</p>
+                    <p id="sum-hours" class="text-xl font-black mt-1">0.0 ч</p>
+                </div>
+                <div>
+                    <p class="text-xs opacity-75 uppercase font-bold tracking-wider">Ср. ЗП за смену</p>
+                    <p id="sum-avg" class="text-xl font-black mt-1">0.00 руб</p>
+                </div>
+            </div>
+
+            <div id="shifts-container" class="space-y-3">
+                <p class="text-center text-gray-500 py-6">Выберите месяц для загрузки данных...</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Раскрываем WebApp на весь экран
+        
+        // ВНИМАНИЕ: Замените на адрес вашего бэкенда на Render после его деплоя!
+        const API_BASE_URL = 'https://ваш-бэкенд.onrender.com'; 
+
+        // Автоматически получаем ID пользователя из Telegram
+        const userId = tg.initDataUnsafe.user?.id || 123456789; // 123456789 - заглушка для тестов в браузере
+        const userName = tg.initDataUnsafe.user?.first_name || "Водитель";
+        
+        document.getElementById('user-display').innerText = userName;
+
+        // Устанавливаем текущий месяц и сегодняшнюю дату по умолчанию
+        const now = new Date();
+        document.getElementById('month-picker').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        document.getElementById('date').value = now.toISOString().split('T')[0];
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.replace('block', 'hidden'));
+            document.getElementById(tabId).classList.replace('hidden', 'block');
+
+            // Стили вкладок
+            if (tabId === 'input-tab') {
+                document.getElementById('btn-input-tab').className = "w-1/2 py-3 text-center font-medium border-b-2 border-blue-600 text-blue-600 focus:outline-none";
+                document.getElementById('btn-history-tab').className = "w-1/2 py-3 text-center font-medium border-b-2 border-transparent text-gray-500 focus:outline-none";
+            } else {
+                document.getElementById('btn-history-tab').className = "w-1/2 py-3 text-center font-medium border-b-2 border-blue-600 text-blue-600 focus:outline-none";
+                document.getElementById('btn-input-tab').className = "w-1/2 py-3 text-center font-medium border-b-2 border-transparent text-gray-500 focus:outline-none";
+                loadHistory();
+            }
+        }
+
+        // ОТПРАВКА ФОРМЫ НА СЕРВЕР
+        async function submitForm(event) {
+            event.preventDefault();
+            
+            const rawDate = document.getElementById('date').value; // ГГГГ-ММ-ДД
+            const [y, m, d] = rawDate.split('-');
+            const formattedDate = `${d}.${m}.${y}`; // Переводим в ДД.ММ.ГГГГ как в старой БД
+
+            const payload = {
+                user_id: userId,
+                date: formattedDate,
+                odo_start: parseFloat(document.getElementById('odo_start').value),
+                odo_end: parseFloat(document.getElementById('odo_end').value),
+                fuel_add: parseFloat(document.getElementById('fuel_add').value),
+                raw_hours: parseFloat(document.getElementById('raw_hours').value),
+                orders: parseInt(document.getElementById('orders').value)
+            };
+
+            // Валидация перед отправкой
+            if (payload.odo_end < payload.odo_start) {
+                tg.showAlert("❌ Одометр на конец смены не может быть меньше начального!");
+                return;
+            }
+            if (payload.raw_hours <= 0 || payload.raw_hours > 24) {
+                tg.showAlert("❌ Количество часов должно быть больше 0 и не превышать 24!");
+                return;
+            }
+
+            tg.MainButton.setText("Отправка данных...").show().disable();
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/save_shift`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    tg.showAlert("🎉 Смена успешно сохранена!");
+                    document.getElementById('shift-form').reset();
+                    document.getElementById('date').value = now.toISOString().split('T')[0];
+                } else {
+                    tg.showAlert(`❌ Ошибка сервера: ${result.error || 'Неизвестная ошибка'}`);
+                }
+            } catch (error) {
+                tg.showAlert("❌ Ошибка сети. Проверьте подключение к серверу.");
+            } finally {
+                tg.MainButton.hide();
+            }
+        }
+
+        // ЗАГРУЗКА ИСТОРИИ И СТАТИСТИКИ
+        async function loadHistory() {
+            const container = document.getElementById('shifts-container');
+            const monthVal = document.getElementById('month-picker').value; // ГГГГ-ММ
+            if (!monthVal) return;
+
+            const [year, month] = monthVal.split('-');
+            container.innerHTML = '<p class="text-center text-gray-500 py-6">⏳ Загрузка смен с сервера...</p>';
+            document.getElementById('month-summary').classList.add('hidden');
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/get_stats?user_id=${userId}&year=${year}&month=${month}`);
+                const resData = await response.json();
+
+                if (!response.ok || resData.status === 'empty') {
+                    container.innerHTML = `<p class="text-center text-gray-500 py-6">${resData.message || 'Смен не найдено.'}</p>`;
+                    return;
+                }
+
+                // Отображаем сводные данные
+                const s = resData.summary;
+                document.getElementById('sum-salary').innerText = `${s.total_salary} руб`;
+                document.getElementById('sum-days').innerText = `${s.days_count} дн.`;
+                document.getElementById('sum-hours').innerText = `${s.total_hours} ч.`;
+                document.getElementById('sum-avg').innerText = `${s.avg_salary} руб`;
+                document.getElementById('month-summary').classList.remove('hidden');
+
+                // Отрисовываем смены по дням
+                container.innerHTML = '';
+                resData.shifts.forEach((shift) => {
+                    const card = document.createElement('div');
+                    card.className = "bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center";
+                    card.innerHTML = `
+                        <div class="space-y-1">
+                            <p class="font-bold text-gray-900">${shift.date}</p>
+                            <p class="text-sm text-gray-500">🏎️ Пробег: <span class="font-semibold text-gray-700">${shift.distance} км</span></p>
+                            <p class="text-sm text-gray-500">⏱️ Время (чистое): <span class="font-semibold text-gray-700">${shift.hours_calculated} ч</span></p>
+                            <p class="text-sm text-gray-500">📦 Заказы: <span class="font-semibold text-gray-700">${shift.orders} шт</span></p>
+                            <p class="text-base text-green-600 font-bold mt-1">💰 ${shift.salary} руб.</p>
+                        </div>
+                        <button onclick="deleteShift(${shift.id}, '${shift.date}')" class="text-red-500 hover:text-red-700 p-2 focus:outline-none">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    `;
+                    container.appendChild(card);
+                });
+
+            } catch (error) {
+                container.innerHTML = '<p class="text-center text-red-500 py-6">❌ Не удалось загрузить данные из-за ошибки сети.</p>';
+            }
+        }
+
+        // УДАЛЕНИЕ СМЕНЫ
+        function deleteShift(shiftId, dateStr) {
+            tg.showConfirm(`Вы действительно хотите удалить смену за ${dateStr}?`, async (confirmed) => {
+                if (confirmed) {
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/api/delete_shift/${shiftId}?user_id=${userId}`, {
+                            method: 'DELETE'
+                        });
+                        if (response.ok) {
+                            tg.showPopup({ message: "🗑️ Запись успешно удалена!" });
+                            loadHistory(); // Обновляем список и статистику на экране
+                        } else {
+                            tg.showAlert("❌ Не удалось удалить запись.");
+                        }
+                    } catch (error) {
+                        tg.showAlert("❌ Сетевая ошибка при удалении.");
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
