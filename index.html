@@ -323,12 +323,9 @@
                 const fuelSummaryCard = document.getElementById('fuel-summary-card');
                 if (userId === MY_TELEGRAM_ID) {
                     fuelSummaryCard.classList.remove('hidden');
-                    if (s.lifetime_fuel_debt >= 0) {
-                        document.getElementById('sum-fuel-lifetime').innerText = `🔴 Долг: ${s.lifetime_fuel_debt} л`;
-                        document.getElementById('sum-fuel-lifetime').className = "text-base font-black mt-0.5 text-red-300";
-                    } else {
-                        document.getElementById('sum-fuel-lifetime').innerText = `🟢 Остаток: ${Math.abs(s.lifetime_fuel_debt)} л`;
-                        document.getElementById('sum-fuel-lifetime').className = "text-base font-black mt-0.5 text-green-300";
+                    {
+                        document.getElementById('sum-fuel-lifetime').innerText = `Остаток: ${Math.abs(s.lifetime_fuel_debt)} л`;
+                        document.getElementById('sum-fuel-lifetime').className = "text-base font-black mt-0.5";
                     }
                 } else {
                     fuelSummaryCard.classList.add('hidden');
@@ -342,14 +339,28 @@
                     card.className = "bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center w-full box-border";
                     
                     // Посуточный расчет топлива выводится только вам
+                   // Замените этот кусок внутри resData.shifts.forEach в index.html:
+        
+        // Посуточный детальный расчет топлива (только для вас)
                     let fuelDayRow = '';
                     if (userId === MY_TELEGRAM_ID) {
-                        const fDebt = shift.shift_debt;
-                        if (fDebt >= 0) {
-                            fuelDayRow = `<p class="text-red-500">⛽ Топливо: +${fDebt} л (долг за смену)</p>`;
-                        } else {
-                            fuelDayRow = `<p class="text-green-600">⛽ Топливо: ${fDebt} л (остаток/сэкономлено)</p>`;
+                        const fAdded = shift.fuel_add;       // Заправлено
+                        const fCons = shift.consumption;     // Расход по пробегу
+                        const fDebt = shift.shift_debt;      // Итог (баланс смены)
+                        
+                        // Определяем статус: сэкономили (остаток) или перерасходовали (долг)
+                        let totalDayResult = '';
+                        {
+                            totalDayResult = `<span class="font-bold">Остаток за день: ${Math.abs(fDebt)} л</span>`;
                         }
+            
+                        fuelDayRow = `
+                            <div class="bg-gray-50 p-2 rounded-lg border border-gray-100 mt-1.5 space-y-0.5 text-[11px]">
+                                <p class="text-gray-600">⛽ Заправлено: <span class="font-semibold text-gray-800">${fAdded} л</span></p>
+                                <p class="text-gray-600">📉 Расход (пробег): <span class="font-semibold text-gray-800">${fCons} л</span></p>
+                                <p class="pt-0.5 border-t border-gray-200 mt-0.5">${totalDayResult}</p>
+                            </div>
+                        `;
                     }
 
                     card.innerHTML = `
